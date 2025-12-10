@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ public class Day_4_Printing_Department {
         }
 
         if (lines.isEmpty()) {
-            System.out.println(0);
+            writeOutput("0");
             return;
         }
 
@@ -70,6 +72,13 @@ public class Day_4_Printing_Department {
             }
         }
 
-        System.out.println(removedTotal);
+        writeOutput(String.valueOf(removedTotal));
+    }
+
+    private static void writeOutput(String text) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("output.txt"))) {
+            bw.write(text);
+            bw.newLine();
+        }
     }
 }
