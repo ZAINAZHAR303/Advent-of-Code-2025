@@ -14,7 +14,7 @@ public class AdventOfCodeDay2Part2 {
 
             String[] bounds = rangeStr.split("-");
             long start = Long.parseLong(bounds[0]);
-            long end = Long.parseLong(bounds[1]);
+            long end = Long.parseLong(boundscd[1]);
 
             // Collect unique invalid IDs for this range to avoid double-counting
             Set<Long> invalidIds = new HashSet<>();
