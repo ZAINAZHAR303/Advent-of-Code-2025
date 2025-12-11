@@ -80,17 +80,14 @@ public class Day_6_Trash_Compactor {
                 continue;
             }
 
+            // Part 2: numbers are given per column, most significant digit at top
             List<Long> numbers = new ArrayList<>();
-            // Extract numbers from rows above the operator row
-            for (int r = 0; r < opRow; r++) {
+            for (int c = startCol; c <= endCol; c++) {
                 StringBuilder sb = new StringBuilder();
-                for (int c = startCol; c <= endCol; c++) {
+                for (int r = 0; r < opRow; r++) {
                     char ch = grid[r][c];
                     if (ch >= '0' && ch <= '9') {
                         sb.append(ch);
-                    } else if (sb.length() > 0) {
-                        // End of a number within this row
-                        break;
                     }
                 }
                 if (sb.length() > 0) {
