@@ -1,12 +1,16 @@
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class Day_5_Cafeteria {
     public static void main(String[] args) throws IOException {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        // Read from input.txt in the current working directory
+        BufferedReader br = new BufferedReader(new FileReader("input.txt"));
         List<long[]> ranges = new ArrayList<>();
         List<Long> ids = new ArrayList<>();
 
@@ -38,6 +42,7 @@ public class Day_5_Cafeteria {
             }
         }
 
+        // Part 1: how many available IDs are fresh?
         int freshCount = 0;
         for (long id : ids) {
             if (isFresh(id, ranges)) {
@@ -45,7 +50,10 @@ public class Day_5_Cafeteria {
             }
         }
 
-        System.out.println(freshCount);
+        // Part 2: how many IDs are fresh according to the ranges alone?
+        long totalFreshIds = countFreshFromRanges(ranges);
+
+        writeOutput(freshCount, totalFreshIds);
     }
 
     private static boolean isFresh(long id, List<long[]> ranges) {
@@ -55,5 +63,49 @@ public class Day_5_Cafeteria {
             }
         }
         return false;
+    }
+
+    // Count how many integer IDs are covered by the union of all ranges
+    private static long countFreshFromRanges(List<long[]> ranges) {
+        if (ranges.isEmpty()) return 0L;
+
+        // Sort ranges by start
+        ranges.sort(Comparator.comparingLong(a -> a[0]));
+
+        long total = 0L;
+        long currentStart = ranges.get(0)[0];
+        long currentEnd = ranges.get(0)[1];
+
+        for (int i = 1; i < ranges.size(); i++) {
+            long[] r = ranges.get(i);
+            long start = r[0];
+            long end = r[1];
+
+            if (start <= currentEnd + 1) {
+                // Overlapping or adjacent: extend current merged range
+                if (end > currentEnd) {
+                    currentEnd = end;
+                }
+            } else {
+                // Disjoint: close current range and start a new one
+                total += (currentEnd - currentStart + 1);
+                currentStart = start;
+                currentEnd = end;
+            }
+        }
+
+        // Add last merged range
+        total += (currentEnd - currentStart + 1);
+
+        return total;
+    }
+
+    private static void writeOutput(int part1, long part2) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("output.txt"))) {
+            bw.write(String.valueOf(part1));
+            bw.newLine();
+            bw.write(String.valueOf(part2));
+            bw.newLine();
+        }
     }
 }
