@@ -4,7 +4,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Day_8_Playground {
@@ -70,34 +69,27 @@ public class Day_8_Playground {
             rank[i] = 0;
         }
 
-        // Connect the 1000 closest pairs (or fewer if not enough pairs)
-        int maxConnections = 1000;
-        int connections = Math.min(maxConnections, edges.size());
-        for (int i = 0; i < connections; i++) {
-            Edge e = edges.get(i);
-            union(parent, rank, e.a, e.b);
-        }
+        int components = n;
+        long result = 0L;
 
-        // Compute sizes of all circuits
-        int[] compSize = new int[n];
-        for (int i = 0; i < n; i++) {
-            int root = find(parent, i);
-            compSize[root]++;
-        }
-
-        List<Integer> sizes = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            if (compSize[i] > 0) {
-                sizes.add(compSize[i]);
+        // Connect closest pairs until all boxes are in a single circuit.
+        for (Edge e : edges) {
+            int ra = find(parent, e.a);
+            int rb = find(parent, e.b);
+            if (ra == rb) {
+                // Already in the same circuit; connecting doesn't change anything.
+                continue;
             }
-        }
 
-        // Sort sizes descending and multiply three largest
-        Collections.sort(sizes, Collections.reverseOrder());
-        long result = 1L;
-        int take = Math.min(3, sizes.size());
-        for (int i = 0; i < take; i++) {
-            result *= sizes.get(i);
+            union(parent, rank, ra, rb);
+            components--;
+
+            if (components == 1) {
+                long xa = points.get(e.a)[0];
+                long xb = points.get(e.b)[0];
+                result = xa * xb;
+                break;
+            }
         }
 
         writeOutput(String.valueOf(result));
@@ -110,9 +102,9 @@ public class Day_8_Playground {
         return parent[x];
     }
 
-    private static void union(int[] parent, int[] rank, int a, int b) {
-        int ra = find(parent, a);
-        int rb = find(parent, b);
+    private static void union(int[] parent, int[] rank, int aRoot, int bRoot) {
+        int ra = aRoot;
+        int rb = bRoot;
         if (ra == rb) return;
         if (rank[ra] < rank[rb]) {
             parent[ra] = rb;
