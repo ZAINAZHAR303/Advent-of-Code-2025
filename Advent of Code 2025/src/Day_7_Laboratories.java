@@ -50,55 +50,63 @@ public class Day_7_Laboratories {
             return;
         }
 
-        long splitCount = simulateSplits(grid, rows, cols, startRow, startCol);
-        writeOutput(String.valueOf(splitCount));
+        long timelineCount = simulateTimelines(grid, rows, cols, startRow, startCol);
+        writeOutput(String.valueOf(timelineCount));
     }
 
-    private static long simulateSplits(char[][] grid, int rows, int cols, int startRow, int startCol) {
-        boolean[] current = new boolean[cols];
-        boolean[] next = new boolean[cols];
+    // Part 2: count how many distinct timelines a single particle can take,
+    // where each splitter branches the timeline into left and right paths.
+    private static long simulateTimelines(char[][] grid, int rows, int cols, int startRow, int startCol) {
+        long[][] dp = new long[rows][cols];
+        long timelines = 0L;
 
-        // Beam starts just below S
-        if (startRow + 1 < rows) {
-            current[startCol] = true;
+        int startR = startRow + 1;
+        if (startR >= rows) {
+            // Particle immediately exits the manifold
+            return 1L;
         }
 
-        long splits = 0L;
+        dp[startR][startCol] = 1L; // one particle entering just below S
 
-        for (int r = startRow + 1; r < rows; r++) {
+        for (int r = startR; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                next[c] = false;
-            }
-
-            for (int c = 0; c < cols; c++) {
-                if (!current[c]) continue;
+                long ways = dp[r][c];
+                if (ways == 0L) continue;
 
                 char cell = grid[r][c];
+                int nr = r + 1;
+
                 if (cell == '^') {
-                    // Split: original beam stops, two new beams left and right
-                    splits++;
-                    if (r + 1 < rows) {
-                        if (c - 1 >= 0) next[c - 1] = true;
-                        if (c + 1 < cols) next[c + 1] = true;
+                    // Split into left and right branches
+                    int leftCol = c - 1;
+                    int rightCol = c + 1;
+
+                    // Left branch
+                    if (nr >= rows || leftCol < 0) {
+                        timelines += ways;
+                    } else {
+                        dp[nr][leftCol] += ways;
+                    }
+
+                    // Right branch
+                    if (nr >= rows || rightCol >= cols) {
+                        timelines += ways;
+                    } else {
+                        dp[nr][rightCol] += ways;
                     }
                 } else {
-                    // Empty or S: beam continues straight down
-                    if (r + 1 < rows) {
-                        next[c] = true;
+                    // Continue straight down
+                    int downCol = c;
+                    if (nr >= rows || downCol < 0 || downCol >= cols) {
+                        timelines += ways;
+                    } else {
+                        dp[nr][downCol] += ways;
                     }
                 }
             }
-
-            boolean any = false;
-            for (int c = 0; c < cols; c++) {
-                current[c] = next[c];
-                if (current[c]) any = true;
-            }
-
-            if (!any) break; // no more beams active
         }
 
-        return splits;
+        return timelines;
     }
 
     private static void writeOutput(String text) throws IOException {
