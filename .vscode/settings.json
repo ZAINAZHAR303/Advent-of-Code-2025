@@ -1,4 +1,3 @@
 {
-    "autocommit.commitMessageTemplate": "",
-    "autocommit.enabled": true
+    "autocommit.commitMessageTemplate": ""
 }
