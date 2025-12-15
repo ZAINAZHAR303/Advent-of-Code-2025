@@ -3,9 +3,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 
 public class Day_9_Movie_Theater {
@@ -34,140 +32,24 @@ public class Day_9_Movie_Theater {
         }
 
         int n = reds.size();
-
-        // Determine bounds of the grid
-        long minX = Long.MAX_VALUE, maxX = Long.MIN_VALUE;
-        long minY = Long.MAX_VALUE, maxY = Long.MIN_VALUE;
-        for (long[] p : reds) {
-            if (p[0] < minX) minX = p[0];
-            if (p[0] > maxX) maxX = p[0];
-            if (p[1] < minY) minY = p[1];
-            if (p[1] > maxY) maxY = p[1];
-        }
-
-        int width = (int) (maxX - minX + 1);
-        int height = (int) (maxY - minY + 1);
-
-        boolean[][] boundary = new boolean[height][width];
-
-        // Mark polygon edges (including red tiles) as boundary
-        for (int i = 0; i < n; i++) {
-            long[] a = reds.get(i);
-            long[] b = reds.get((i + 1) % n);
-
-            int ax = (int) (a[0] - minX);
-            int ay = (int) (a[1] - minY);
-            int bx = (int) (b[0] - minX);
-            int by = (int) (b[1] - minY);
-
-            if (ax == bx) {
-                // Vertical segment
-                int y0 = Math.min(ay, by);
-                int y1 = Math.max(ay, by);
-                for (int y = y0; y <= y1; y++) {
-                    boundary[y][ax] = true;
-                }
-            } else if (ay == by) {
-                // Horizontal segment
-                int x0 = Math.min(ax, bx);
-                int x1 = Math.max(ax, bx);
-                for (int x = x0; x <= x1; x++) {
-                    boundary[ay][x] = true;
-                }
-            }
-        }
-
-        // Flood fill from outside to find cells that are not inside the loop
-        int extH = height + 2;
-        int extW = width + 2;
-        boolean[][] outside = new boolean[extH][extW];
-
-        Deque<int[]> dq = new ArrayDeque<>();
-        dq.add(new int[]{0, 0});
-        outside[0][0] = true;
-
-        int[] dr = {-1, 1, 0, 0};
-        int[] dc = {0, 0, -1, 1};
-
-        while (!dq.isEmpty()) {
-            int[] cur = dq.poll();
-            int r = cur[0];
-            int c = cur[1];
-
-            for (int k = 0; k < 4; k++) {
-                int nr = r + dr[k];
-                int nc = c + dc[k];
-                if (nr < 0 || nr >= extH || nc < 0 || nc >= extW) continue;
-                if (outside[nr][nc]) continue;
-
-                // Map to original grid
-                int gy = nr - 1;
-                int gx = nc - 1;
-                boolean blocked = false;
-                if (gy >= 0 && gy < height && gx >= 0 && gx < width) {
-                    if (boundary[gy][gx]) blocked = true;
-                }
-
-                if (blocked) continue;
-
-                outside[nr][nc] = true;
-                dq.add(new int[]{nr, nc});
-            }
-        }
-
-        // Cells that are boundary or inside the loop are allowed (red or green)
-        boolean[][] allowed = new boolean[height][width];
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (boundary[y][x]) {
-                    allowed[y][x] = true;
-                } else {
-                    // Check if this cell is inside: not reachable from outside
-                    int ey = y + 1;
-                    int ex = x + 1;
-                    if (!outside[ey][ex]) {
-                        allowed[y][x] = true;
-                    }
-                }
-            }
-        }
-
-        // Build prefix sum of illegal cells (!allowed)
-        int[][] pref = new int[height + 1][width + 1];
-        for (int y = 0; y < height; y++) {
-            int rowSum = 0;
-            for (int x = 0; x < width; x++) {
-                if (!allowed[y][x]) rowSum++;
-                pref[y + 1][x + 1] = pref[y][x + 1] + rowSum;
-            }
-        }
-
         long maxArea = 0L;
 
         // Try all pairs of red tiles as opposite corners
         for (int i = 0; i < n; i++) {
             long[] a = reds.get(i);
-            int ax = (int) (a[0] - minX);
-            int ay = (int) (a[1] - minY);
             for (int j = i + 1; j < n; j++) {
                 long[] b = reds.get(j);
-                int bx = (int) (b[0] - minX);
-                int by = (int) (b[1] - minY);
 
-                int x0 = Math.min(ax, bx);
-                int x1 = Math.max(ax, bx);
-                int y0 = Math.min(ay, by);
-                int y1 = Math.max(ay, by);
+                long x0 = Math.min(a[0], b[0]);
+                long x1 = Math.max(a[0], b[0]);
+                long y0 = Math.min(a[1], b[1]);
+                long y1 = Math.max(a[1], b[1]);
 
-                int illegal = pref[y1 + 1][x1 + 1]
-                        - pref[y0][x1 + 1]
-                        - pref[y1 + 1][x0]
-                        + pref[y0][x0];
+                // Skip degenerate rectangles (zero area)
+                if (x0 == x1 || y0 == y1) continue;
 
-                if (illegal == 0) {
-                    long dx = x1 - x0 + 1L;
-                    long dy = y1 - y0 + 1L;
-                    long area = dx * dy;
+                if (rectangleInsidePolygon(x0, y0, x1, y1, reds)) {
+                    long area = (x1 - x0 + 1L) * (y1 - y0 + 1L);
                     if (area > maxArea) {
                         maxArea = area;
                     }
@@ -176,6 +58,97 @@ public class Day_9_Movie_Theater {
         }
 
         writeOutput(String.valueOf(maxArea));
+    }
+
+    // Check if an axis-aligned rectangle [x0,x1] x [y0,y1] is fully inside
+    // the polygon formed by reds (connected in given order with axis-aligned edges).
+    private static boolean rectangleInsidePolygon(long x0, long y0, long x1, long y1, List<long[]> reds) {
+        // Sample point strictly inside the rectangle
+        double cx = (x0 + x1) * 0.5;
+        double cy = (y0 + y1) * 0.5;
+
+        if (!pointInOrOnPolygon(cx, cy, reds)) {
+            return false;
+        }
+
+        // Ensure no polygon edge crosses the interior of the rectangle
+        int n = reds.size();
+        for (int i = 0; i < n; i++) {
+            long[] p1 = reds.get(i);
+            long[] p2 = reds.get((i + 1) % n);
+
+            long xA = p1[0], yA = p1[1];
+            long xB = p2[0], yB = p2[1];
+
+            if (xA == xB) {
+                // Vertical edge at x = xA between yA and yB
+                long x = xA;
+                long yMin = Math.min(yA, yB);
+                long yMax = Math.max(yA, yB);
+
+                if (x > x0 && x < x1) {
+                    // Overlap with rectangle's vertical span in (y0, y1)
+                    long yy0 = Math.max(yMin, y0 + 1);
+                    long yy1 = Math.min(yMax, y1 - 1);
+                    if (yy0 <= yy1) {
+                        return false; // edge crosses rectangle interior
+                    }
+                }
+            } else if (yA == yB) {
+                // Horizontal edge at y = yA between xA and xB
+                long y = yA;
+                long xMin = Math.min(xA, xB);
+                long xMax = Math.max(xA, xB);
+
+                if (y > y0 && y < y1) {
+                    long xx0 = Math.max(xMin, x0 + 1);
+                    long xx1 = Math.min(xMax, x1 - 1);
+                    if (xx0 <= xx1) {
+                        return false; // edge crosses rectangle interior
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    // Standard point-in-polygon (ray casting) treating boundary as inside.
+    private static boolean pointInOrOnPolygon(double x, double y, List<long[]> reds) {
+        int n = reds.size();
+        boolean inside = false;
+
+        for (int i = 0, j = n - 1; i < n; j = i++) {
+            double xi = reds.get(i)[0];
+            double yi = reds.get(i)[1];
+            double xj = reds.get(j)[0];
+            double yj = reds.get(j)[1];
+
+            // Check if point is exactly on a polygon edge
+            if (onSegment(xj, yj, xi, yi, x, y)) {
+                return true;
+            }
+
+            boolean intersect = ((yi > y) != (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi + 0.0) + xi);
+            if (intersect) inside = !inside;
+        }
+
+        return inside;
+    }
+
+    private static boolean onSegment(double x1, double y1, double x2, double y2, double px, double py) {
+        // Collinearity check for axis-aligned edges
+        if (x1 == x2) {
+            // vertical segment
+            if (px != x1) return false;
+            return py >= Math.min(y1, y2) && py <= Math.max(y1, y2);
+        } else if (y1 == y2) {
+            // horizontal segment
+            if (py != y1) return false;
+            return px >= Math.min(x1, x2) && px <= Math.max(x1, x2);
+        }
+        return false;
     }
 
     private static void writeOutput(String text) throws IOException {
